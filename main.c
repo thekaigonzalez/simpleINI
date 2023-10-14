@@ -277,7 +277,6 @@ i_parser_parse (ini_parser *parser, char *stats)
           i_buffer_clear (t);
 
           value = i_create_name (copycat);
-          printf ("value: %s\n", value->ptr);
 
           i_section_add_key_value (section, i_create_key_value (key, value));
 
@@ -336,7 +335,6 @@ i_parser_parse (ini_parser *parser, char *stats)
 
       value = i_create_name (copycat);
 
-      printf ("value: %s\n", value->ptr);
       i_section_add_key_value (section, i_create_key_value (key, value));
 
       i_destroy_name (key);
@@ -344,10 +342,8 @@ i_parser_parse (ini_parser *parser, char *stats)
 
       key = NULL;
       value = NULL;
-
-      free (copycat);
     }
-
+  free (copycat);
   i_destroy_temp (t);
   i_destroy_name (key);
   i_destroy_name (value);
@@ -606,11 +602,9 @@ i_destroy_section (ini_section *section)
         }
       else
         {
-          printf ("key: %s\n", section->key_value[i]->key->ptr);
-          
+
           i_destroy_name (section->key_value[i]->key);
           i_destroy_name (section->key_value[i]->value);
-          i_destroy_key_value (section->key_value[i]);
           section->key_value[i] = NULL;
         }
     }
