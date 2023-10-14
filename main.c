@@ -36,7 +36,6 @@ i_destroy_name (ini_name *ini)
   free (ini->ptr);
   free (ini);
 
-  ini->ptr = NULL;
   ini = NULL;
 }
 
@@ -210,6 +209,8 @@ i_parser_parse (ini_parser *parser, char *stats)
 
   char *copycat = NULL;
 
+  ini_key_value *CUR = NULL;
+
   ini_name *key = NULL;
   ini_name *value = NULL;
 
@@ -251,7 +252,11 @@ i_parser_parse (ini_parser *parser, char *stats)
           i_buffer_clear (t);
 
           key = i_create_name (copycat);
+
           i_parser_update_state (parser, INI_STATE_VALUE);
+
+          // free(copycat);
+          // copycat = NULL;
         }
       else if (*stats == INI_STAT_NEW_LINE
                && i_parser_get_state (parser) != INI_STATE_SECTION
@@ -278,12 +283,17 @@ i_parser_parse (ini_parser *parser, char *stats)
 
           value = i_create_name (copycat);
 
-          i_section_add_key_value (section, i_create_key_value (key, value));
+          CUR = i_create_key_value (key, value);
+          i_section_add_key_value (section, CUR);
 
+          free(copycat);
           free (key);
           free (value);
+          
           key = NULL;
           value = NULL;
+          copycat = NULL;
+
           // printf("key and value: %s %s\n", key->ptr, value->ptr);
         }
       else if (*stats == INI_QUOTE_CHAR
@@ -307,7 +317,8 @@ i_parser_parse (ini_parser *parser, char *stats)
             {
               fprintf (stderr, "ini(%d:%d): invalid character '%c'\n", LINE,
                        CHAR, *stats);
-              exit (1);
+              break;
+              // exit (1);
             }
         }
       if (*stats != '\0')
@@ -335,7 +346,12 @@ i_parser_parse (ini_parser *parser, char *stats)
 
       value = i_create_name (copycat);
 
-      i_section_add_key_value (section, i_create_key_value (key, value));
+      if (key == NULL) {
+        fprintf(stderr, "ini(INTERNAL:%d): missing key\n", CHAR);
+      }
+      CUR = i_create_key_value (key, value);
+      i_section_add_key_value (section, CUR);
+
 
       i_destroy_name (key);
       i_destroy_name (value);
@@ -343,11 +359,13 @@ i_parser_parse (ini_parser *parser, char *stats)
       key = NULL;
       value = NULL;
     }
+    
   free (copycat);
   i_destroy_temp (t);
-  i_destroy_name (key);
-  i_destroy_name (value);
+  
+  free(CUR);
 
+  parser = NULL;
   copycat = NULL;
   return section;
 }
@@ -599,6 +617,9 @@ i_destroy_section (ini_section *section)
       if (section->key_value[i] == NULL)
         {
           fprintf (stderr, "NULL\n");
+          i_destroy_name (section->key_value[i]->key);
+          i_destroy_name (section->key_value[i]->value);
+          section->key_value[i] = NULL;
         }
       else
         {
@@ -628,6 +649,7 @@ i_section_add_key_value (ini_section *section, ini_key_value *key_value)
     return;
 
   section->key_value[section->count] = key_value;
+  
   section->count++;
 }
 
